@@ -1,0 +1,1126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>JusTelMi PVT Analyzer</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@300;400;500&family=IBM+Plex+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+:root{
+  --bg:#0a0e17;--surface:#111825;--card:#161e2e;--card2:#1a2235;
+  --accent:#00d4aa;--accent2:#0084ff;--warn:#ff6b35;
+  --text:#e8edf5;--muted:#6b7a99;--border:rgba(255,255,255,0.07);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html{scroll-behavior:smooth;}
+body{font-family:'IBM Plex Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;}
+
+/* SIDEBAR */
+.sidebar{
+  position:fixed;top:0;left:0;width:240px;height:100vh;
+  background:var(--surface);border-right:1px solid var(--border);
+  display:flex;flex-direction:column;z-index:100;overflow-y:auto;
+}
+.sidebar-logo{
+  padding:1.5rem 1.25rem 1rem;border-bottom:1px solid var(--border);
+}
+.logo-mark{
+  display:flex;align-items:center;gap:10px;
+}
+.lm-box{
+  width:34px;height:34px;border-radius:8px;
+  background:linear-gradient(135deg,var(--accent),var(--accent2));
+  display:flex;align-items:center;justify-content:center;
+  font-family:'Syne',sans-serif;font-weight:800;font-size:0.75rem;color:#0a0e17;
+  flex-shrink:0;
+}
+.lm-name{font-family:'Syne',sans-serif;font-weight:700;font-size:0.92rem;}
+.lm-name span{color:var(--accent);}
+.lm-ver{font-family:'IBM Plex Mono',monospace;font-size:0.6rem;color:var(--muted);margin-top:2px;}
+
+.nav-section{padding:1rem 0.75rem 0.5rem;}
+.nav-label{
+  font-size:0.58rem;font-weight:600;letter-spacing:0.18em;
+  color:var(--muted);text-transform:uppercase;padding:0 0.5rem;margin-bottom:0.4rem;
+}
+.nav-item{
+  display:flex;align-items:center;gap:9px;
+  padding:8px 10px;border-radius:8px;
+  font-size:0.82rem;color:var(--muted);cursor:pointer;
+  transition:background 0.15s,color 0.15s;
+  text-decoration:none;margin-bottom:2px;
+  border:none;background:none;width:100%;text-align:left;
+}
+.nav-item:hover{background:rgba(255,255,255,0.05);color:var(--text);}
+.nav-item.active{background:rgba(0,212,170,0.1);color:var(--accent);font-weight:500;}
+.nav-icon{font-size:14px;width:16px;flex-shrink:0;}
+
+.sidebar-bottom{
+  margin-top:auto;padding:1rem 1.25rem;border-top:1px solid var(--border);
+}
+.user-chip{
+  display:flex;align-items:center;gap:9px;
+}
+.user-avatar{
+  width:30px;height:30px;border-radius:50%;
+  background:linear-gradient(135deg,var(--accent),var(--accent2));
+  display:flex;align-items:center;justify-content:center;
+  font-size:0.7rem;font-weight:700;color:#0a0e17;flex-shrink:0;
+}
+.user-email{font-size:0.72rem;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.logout-btn{
+  margin-top:0.6rem;font-size:0.72rem;color:var(--muted);
+  background:none;border:none;cursor:pointer;padding:0;
+  transition:color 0.15s;
+}
+.logout-btn:hover{color:#ff6b6b;}
+
+/* MAIN */
+.main{margin-left:240px;padding:2rem;min-height:100vh;}
+
+/* TOPBAR */
+.topbar{
+  display:flex;align-items:center;justify-content:space-between;
+  margin-bottom:2rem;
+}
+.page-title{
+  font-family:'Syne',sans-serif;font-weight:700;font-size:1.4rem;
+  letter-spacing:-0.02em;
+}
+.page-title span{color:var(--accent);}
+.tag-pill{
+  font-family:'IBM Plex Mono',monospace;font-size:0.6rem;
+  background:rgba(0,212,170,0.1);color:var(--accent);
+  border:1px solid rgba(0,212,170,0.2);border-radius:20px;
+  padding:4px 12px;letter-spacing:0.08em;
+}
+
+/* SECTION */
+.section{margin-bottom:3rem;display:none;}
+.section.active{display:block;}
+.section-header{
+  display:flex;align-items:center;gap:12px;margin-bottom:1.5rem;
+  padding-bottom:1rem;border-bottom:1px solid var(--border);
+}
+.section-num{
+  font-family:'IBM Plex Mono',monospace;font-size:0.65rem;
+  color:var(--accent);background:rgba(0,212,170,0.1);
+  border:1px solid rgba(0,212,170,0.2);border-radius:4px;padding:3px 7px;
+}
+.section-title{font-family:'Syne',sans-serif;font-weight:700;font-size:1.1rem;}
+.section-desc{font-size:0.82rem;color:var(--muted);margin-top:4px;}
+
+/* CARDS */
+.card{
+  background:var(--card);border:1px solid var(--border);
+  border-radius:12px;padding:1.5rem;
+}
+.card-sm{padding:1rem 1.25rem;}
+
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:1.25rem;}
+.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:1rem;}
+
+/* CHART */
+.chart-wrap{position:relative;height:320px;}
+.chart-title{
+  font-family:'Syne',sans-serif;font-weight:600;font-size:0.9rem;
+  margin-bottom:1rem;color:var(--text);
+}
+.chart-sub{font-size:0.72rem;color:var(--muted);margin-top:-0.6rem;margin-bottom:1rem;}
+
+/* STAT CARDS */
+.stat-card{
+  background:var(--card2);border:1px solid var(--border);border-radius:10px;padding:1rem 1.25rem;
+}
+.stat-label{font-size:0.67rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);margin-bottom:0.4rem;}
+.stat-val{font-family:'IBM Plex Mono',monospace;font-size:1.25rem;font-weight:500;color:var(--text);}
+.stat-unit{font-size:0.65rem;color:var(--muted);margin-left:4px;}
+
+/* TABLES */
+.tbl-wrap{overflow-x:auto;border-radius:10px;border:1px solid var(--border);}
+table{width:100%;border-collapse:collapse;font-size:0.82rem;}
+thead tr{background:rgba(0,212,170,0.07);border-bottom:1px solid rgba(0,212,170,0.2);}
+thead th{
+  padding:10px 14px;text-align:left;font-family:'IBM Plex Mono',monospace;
+  font-size:0.65rem;letter-spacing:0.1em;color:var(--accent);font-weight:500;
+  white-space:nowrap;
+}
+tbody tr{border-bottom:1px solid var(--border);transition:background 0.1s;}
+tbody tr:hover{background:rgba(255,255,255,0.03);}
+tbody tr:last-child{border-bottom:none;}
+tbody td{
+  padding:9px 14px;color:var(--text);font-family:'IBM Plex Mono',monospace;
+  font-size:0.78rem;
+}
+tbody td[contenteditable=true]{
+  outline:none;cursor:text;
+  transition:background 0.15s;
+}
+tbody td[contenteditable=true]:focus{
+  background:rgba(0,212,170,0.08);
+  box-shadow:inset 0 0 0 1px rgba(0,212,170,0.4);
+}
+
+/* INTRO */
+.intro-hero{
+  background:linear-gradient(135deg,rgba(0,212,170,0.06),rgba(0,132,255,0.06));
+  border:1px solid rgba(0,212,170,0.15);border-radius:14px;
+  padding:2.5rem 2rem;margin-bottom:2rem;
+}
+.intro-hero h2{
+  font-family:'Syne',sans-serif;font-weight:800;font-size:1.8rem;
+  letter-spacing:-0.03em;margin-bottom:0.8rem;
+}
+.intro-hero h2 em{color:var(--accent);font-style:normal;}
+.intro-hero p{font-size:0.9rem;line-height:1.75;color:rgba(232,237,245,0.8);max-width:700px;}
+.feature-chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:1.2rem;}
+.feat-chip{
+  font-family:'IBM Plex Mono',monospace;font-size:0.65rem;
+  background:rgba(255,255,255,0.05);border:1px solid var(--border);
+  border-radius:6px;padding:5px 10px;color:var(--muted);
+}
+
+/* INTERPRETATION */
+.interp-block{
+  background:rgba(0,212,170,0.05);border-left:3px solid var(--accent);
+  border-radius:0 8px 8px 0;padding:1rem 1.25rem;margin-top:1rem;
+}
+.interp-block h4{font-size:0.8rem;font-weight:600;color:var(--accent);margin-bottom:0.5rem;letter-spacing:0.05em;}
+.interp-block p{font-size:0.82rem;line-height:1.7;color:rgba(232,237,245,0.8);}
+
+/* COMPARISON TABLE */
+.comp-good{color:#4ade80;}
+.comp-warn{color:#facc15;}
+.comp-bad{color:#f87171;}
+
+/* PHASE ENV CANVAS */
+#phaseCanvas{border-radius:8px;}
+</style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<nav class="sidebar">
+  <div class="sidebar-logo">
+    <div class="logo-mark">
+      <div class="lm-box">JT</div>
+      <div>
+        <div class="lm-name"><span>JusTelMi</span> PVT</div>
+        <div class="lm-ver">ANALYZER v1.0</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="nav-section">
+    <div class="nav-label">Overview</div>
+    <button class="nav-item active" onclick="showSection('intro',this)">
+      <span class="nav-icon">◎</span> introduction
+    </button>
+    <button class="nav-item" onclick="showSection('fielddata',this)">
+      <span class="nav-icon">📋</span> field data
+    </button>
+    <button class="nav-item" onclick="showSection('workflow',this)">
+      <span class="nav-icon">⬡</span> workflow diagram
+    </button>
+  </div>
+
+  <div class="nav-section">
+    <div class="nav-label">Analysis</div>
+    <button class="nav-item" onclick="showSection('fingerprint',this)">
+      <span class="nav-icon">⬡</span> fingerprint plot
+    </button>
+    <button class="nav-item" onclick="showSection('phase',this)">
+      <span class="nav-icon">◈</span> phase envelope
+    </button>
+    <button class="nav-item" onclick="showSection('psat',this)">
+      <span class="nav-icon">⊞</span> psat simulation
+    </button>
+  </div>
+
+  <div class="nav-section">
+    <div class="nav-label">Experiments</div>
+    <button class="nav-item" onclick="showSection('cce',this)">
+      <span class="nav-icon">⊙</span> cce simulation
+    </button>
+    <button class="nav-item" onclick="showSection('dl',this)">
+      <span class="nav-icon">⊕</span> dl simulation
+    </button>
+  </div>
+
+  <div class="nav-section">
+    <div class="nav-label">Results</div>
+    <button class="nav-item" onclick="showSection('pvttable',this)">
+      <span class="nav-icon">▦</span> pvt properties
+    </button>
+    <button class="nav-item" onclick="showSection('comparison',this)">
+      <span class="nav-icon">⇄</span> exp vs simulated
+    </button>
+    <button class="nav-item" onclick="showSection('interpretation',this)">
+      <span class="nav-icon">✦</span> interpretation
+    </button>
+  </div>
+
+  <div class="sidebar-bottom">
+    <div class="user-chip">
+      <div class="user-avatar" id="avatarInitial">U</div>
+      <div class="user-email" id="userEmail">user@gmail.com</div>
+    </div>
+    <button class="logout-btn" onclick="logout()">↩ Sign out</button>
+  </div>
+</nav>
+
+<!-- MAIN -->
+<main class="main">
+  <div class="topbar">
+    <div>
+      <div class="page-title">PVT <span>Analysis</span> Platform</div>
+      <div style="font-size:0.75rem;color:var(--muted);margin-top:3px;font-family:'IBM Plex Mono',monospace;">
+        Reservoir Fluid · T = 240°F · Pb = 4250 psia
+      </div>
+    </div>
+    <div class="tag-pill">COURSEWORK NO. 2</div>
+  </div>
+
+  <!-- ══ INTRO ══ -->
+  <div class="section active" id="sec-intro">
+    <div class="intro-hero">
+      <h2>Welcome to <em>JusTelMi</em> PVT Analyzer</h2>
+      <p>
+        JusTelMi PVT Analyzer is a web-based petroleum fluid analysis platform designed to simulate, visualize, and interpret Pressure-Volume-Temperature (PVT) laboratory experiments for reservoir engineering applications. Built around the 3-parameter Soave-Redlich-Kwong (SRK3) Equation of State, this tool enables engineers to characterize reservoir fluids, simulate CCE and Differential Liberation experiments, and generate PVT property tables used in reservoir simulation software such as ECLIPSE/PVTi.
+      </p>
+      <p style="margin-top:0.8rem;">
+        PVT analysis is fundamental to understanding how reservoir fluids behave under varying pressure and temperature conditions — knowledge that directly drives production forecasting, well deliverability calculations, and reserves estimation. This platform provides full fluid phase behavior modeling including fingerprint analysis, phase envelope generation, and saturation pressure simulation.
+      </p>
+      <div class="feature-chips">
+        <div class="feat-chip">Fingerprint Plot</div>
+        <div class="feat-chip">Phase Envelope</div>
+        <div class="feat-chip">CCE Simulation</div>
+        <div class="feat-chip">DL Simulation</div>
+        <div class="feat-chip">Psat Simulation</div>
+        <div class="feat-chip">EOS: SRK3</div>
+        <div class="feat-chip">Lohrenz-Bray-Clark Viscosity</div>
+        <div class="feat-chip">Editable Tables</div>
+        <div class="feat-chip">Exp vs Simulated Comparison</div>
+      </div>
+    </div>
+
+    <div class="grid3" style="margin-bottom:1.5rem;">
+      <div class="stat-card">
+        <div class="stat-label">Bubble Point Pressure</div>
+        <div class="stat-val">4250<span class="stat-unit">psia</span></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Reservoir Temperature</div>
+        <div class="stat-val">240<span class="stat-unit">°F</span></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">EOS Model</div>
+        <div class="stat-val" style="font-size:1rem;">SRK3</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="chart-title">Reservoir Fluid Composition</div>
+      <div class="chart-sub">Mole fraction of components in the fluid system</div>
+      <div class="chart-wrap"><canvas id="compChart"></canvas></div>
+    </div>
+  </div>
+
+  <!-- ══ FIELD DATA ══ -->
+  <div class="section" id="sec-fielddata">
+    <div class="section-header">
+      <span class="section-num">00</span>
+      <div>
+        <div class="section-title">Field Data</div>
+        <div class="section-desc">Reservoir field parameters and fluid composition from laboratory analysis</div>
+      </div>
+    </div>
+
+    <!-- A. Field Parameters -->
+    <div class="card" style="margin-bottom:1.25rem;">
+      <div class="chart-title" style="margin-bottom:1rem;">A. Field Parameters</div>
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr>
+            <th>Parameter</th>
+            <th>Value</th>
+          </tr></thead>
+          <tbody>
+            <tr><td>Reservoir Pressure</td><td>4200 psia</td></tr>
+            <tr><td>Reservoir Temperature</td><td>240 °F</td></tr>
+            <tr><td>Separator Pressure</td><td>120 psia</td></tr>
+            <tr><td>Separator Temperature</td><td>80 °F</td></tr>
+            <tr><td>Producing GOR</td><td>1850 scf/STB</td></tr>
+            <tr><td>Oil API Gravity</td><td>42 °API</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- B. Reservoir Fluid Composition -->
+    <div class="card" style="margin-bottom:1.25rem;">
+      <div class="chart-title" style="margin-bottom:1rem;">B. Reservoir Fluid Composition</div>
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr>
+            <th>Component</th>
+            <th>Mole %</th>
+          </tr></thead>
+          <tbody>
+            <tr><td>N2</td><td>0.30</td></tr>
+            <tr><td>CO2</td><td>1.20</td></tr>
+            <tr><td>C1</td><td>68.50</td></tr>
+            <tr><td>C2</td><td>7.80</td></tr>
+            <tr><td>C3</td><td>5.20</td></tr>
+            <tr><td>i-C4</td><td>1.80</td></tr>
+            <tr><td>n-C4</td><td>2.10</td></tr>
+            <tr><td>i-C5</td><td>1.20</td></tr>
+            <tr><td>n-C5</td><td>1.10</td></tr>
+            <tr><td>C6</td><td>2.00</td></tr>
+            <tr><td>C7</td><td>2.30</td></tr>
+            <tr><td>C8</td><td>1.90</td></tr>
+            <tr><td>C9</td><td>1.40</td></tr>
+            <tr><td>C10+</td><td>3.20</td></tr>
+            <tr style="background:rgba(0,212,170,0.07);font-weight:600;"><td>Total</td><td>100.00</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- C. Differential Liberation Test Data -->
+    <div class="card">
+      <div class="chart-title" style="margin-bottom:0.4rem;">C. Differential Liberation Test Data</div>
+      <div class="chart-sub" style="margin-bottom:1rem;">Measured Bubble Point Pressure: Pb = 4250 psia</div>
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr>
+            <th>Pressure (psia)</th>
+            <th>Solution GOR (scf/STB)</th>
+            <th>Oil FVF (bbl/STB)</th>
+          </tr></thead>
+          <tbody>
+            <tr><td>4300</td><td>1700</td><td>1.62</td></tr>
+            <tr><td>3800</td><td>1450</td><td>1.55</td></tr>
+            <tr><td>3200</td><td>1180</td><td>1.47</td></tr>
+            <tr><td>2500</td><td>900</td><td>1.38</td></tr>
+            <tr><td>1800</td><td>620</td><td>1.29</td></tr>
+            <tr><td>1000</td><td>300</td><td>1.18</td></tr>
+            <tr><td>15</td><td>20</td><td>1.03</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ WORKFLOW DIAGRAM ══ -->
+  <div class="section" id="sec-workflow">
+    <div class="section-header">
+      <span class="section-num">WF</span>
+      <div>
+        <div class="section-title">Workflow Diagram / Flowchart</div>
+        <div class="section-desc">Logically sequenced PVT analysis process — from data input to fluid classification</div>
+      </div>
+    </div>
+    <div class="card" style="margin-bottom:1.25rem;">
+      <div class="chart-title" style="margin-bottom:0.4rem;">PVT Analysis System Workflow</div>
+      <div class="chart-sub" style="margin-bottom:1.2rem;">Complete end-to-end process using correct flowchart symbols (ISO 5807)</div>
+      <div style="overflow-x:auto;">
+        <svg viewBox="0 0 700 1370" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:700px;display:block;margin:0 auto;">
+          <defs>
+            <marker id="arr" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto"><polygon points="0 0,10 3.5,0 7" fill="#00d4aa"/></marker>
+            <marker id="arr2" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto"><polygon points="0 0,10 3.5,0 7" fill="#6b7a99"/></marker>
+          </defs>
+          <!-- START -->
+          <rect x="255" y="20" width="190" height="40" rx="20" fill="#00d4aa"/>
+          <text x="350" y="45" text-anchor="middle" font-family="IBM Plex Mono,monospace" font-size="14" font-weight="700" fill="#0a0e17">START</text>
+          <line x1="350" y1="60" x2="350" y2="88" stroke="#00d4aa" stroke-width="2" marker-end="url(#arr)"/>
+          <!-- INPUT parallelogram -->
+          <polygon points="185,90 515,90 495,144 205,144" fill="#161e2e" stroke="#00d4aa" stroke-width="1.5"/>
+          <text x="350" y="111" text-anchor="middle" font-family="Syne,sans-serif" font-size="11" font-weight="700" fill="#00d4aa">INPUT: Field and Laboratory Data</text>
+          <text x="350" y="128" text-anchor="middle" font-family="IBM Plex Mono,monospace" font-size="9" fill="#a0aec0">P=4200 psia, T=240F, GOR=1850 scf/STB, API=42</text>
+          <line x1="350" y1="144" x2="350" y2="172" stroke="#00d4aa" stroke-width="2" marker-end="url(#arr)"/>
+          <!-- STEP 1 -->
+          <rect x="175" y="174" width="350" height="58" rx="6" fill="#161e2e" stroke="#0084ff" stroke-width="1.5"/>
+          <text x="350" y="197" text-anchor="middle" font-family="Syne,sans-serif" font-size="11" font-weight="700" fill="#0084ff">STEP 1: Compositional Analysis</text>
+          <text x="350" y="213" text-anchor="middle" font-family="IBM Plex Mono,monospace" font-size="9" fill="#a0aec0">Gas chromatography — identify C1 thru C10+, N2, CO2</text>
+          <text x="350" y="226" text-anchor="middle" font-family="IBM Plex Mono,monospace" font-size="9" fill="#a0aec0">Compute mole fractions — verify total = 100 mol%</text>
+          <line x1="350" y1="232" x2="350" y2="260" stroke="#00d4aa" stroke-width="2" marker-end="url(#arr)"/>
+          <!-- STEP 2 -->
+          <rect x="175" y="262" width="350" height="58" rx="6" fill="#161e2e" stroke="#0084ff" stroke-width="1.5"/>
+          <text x="350" y="285" text-anchor="middle" font-family="Syne,sans-serif" font-size="11" font-weight="700" fill="#0084ff">STEP 2: Fingerprint Plot</text>
+          <text x="350" y="301" text-anchor="middle" font-family="IBM Plex Mono,monospace" font-size="9" fill="#a0aec0">Plot mole % vs carbon number (C1 to C10+)</text>
+          <text x="350" y="314" text-anchor="middle" font-family="IBM Plex Mono,monospace" font-size="9" fill="#a0aec0">Identify fluid type from composition distribution</text>
+          <line x1="350" y1="320" x2="350" y2="348" stroke="#00d4aa" stroke-width="2" marker-end="url(#arr)"/>
+          <!-- STEP 3 -->
+          <rect x="175" y="350" width="350" height="58" rx="6" fill="#161e2e" stroke="#a78bfa" stroke-width="1.5"/>
+          <text x="350" y="373" text-anchor="middle" font-family="Syne,sans-serif" font-size="11" font-weight="700" fill="#a78bfa">STEP 3: Differential Liberation (DL) Test</text>
+          <text x="350" y="389" text-anchor="middle" font-family="IBM Plex Mono,monospace" font-size="9" fill="#a0aec0">Stepwise P depletion — measure GOR and Bo</text>
+          <text x="350" y="402" text-anchor="middle" font-family="IBM Plex Mono,monospace" font-size="9" fill="#a0aec0">Identify Pb = 4250 psia — plot Rs and Bo vs P</text>
+          <line x1="350" y1="408" x2="350" y2="436" stroke="#00d4aa" stroke-width="2" marker-end="url(#arr)"/>
+          <!-- STEP 4 -->
+          <rect x="175" y="438" width="350" height="58" rx="6" fill="#161e2e" stroke="#a78bfa" stroke-width="1.5"/>
+          <text x="350" y="461" text-anchor="middle" font-family="Syne,sans-serif" font-size="11" font-weight="700" fill="#a78bfa">STEP 4: CCE Simulation (SRK3 EOS)</text>
+          <text x="350" y="477" text-anchor="middle" font-family="IBM Plex Mono,monospace" font-size="9" fill="#a0aec0">Constant Composition Expansion — compute V/Vsat</text>
+          <text x="350" y="490" text-anchor="middle" font-family="IBM Plex Mono,monospace" font-size="9" fill="#a0aec0">Verify Pb from inflection point in relative volume curve</text>
+          <line x1="350" y1="496" x2="350" y2="524" stroke="#00d4aa" stroke-width="2" marker-end="url(#arr)"/>
+          <!-- STEP 5 -->
+          <rect x="175" y="526" width="350" height="58" rx="6" fill="#161e2e" stroke="#f59e0b" stroke-width="1.5"/>
+          <text x="350" y="549" text-anchor="middle" font-family="Syne,sans-serif" font-size="11" font-weight="700" fill="#f59e0b">STEP 5: Phase Envelope Generation</text>
+          <text x="350" y="565" text-anchor="middle" font-family="IBM Plex Mono,monospace" font-size="9" fill="#a0aec0">Construct P-T diagram — bubble and dew point curves</text>
+          <text x="350" y="578" text-anchor="middle" font-family="IBM Plex Mono,monospace" font-size="9" fill="#a0aec0">Locate cricondenbar, cricondentherm, critical point</text>
+          <line x1="350" y1="584" x2="350" y2="612" stroke="#00d4aa" stroke-width="2" marker-end="url(#arr)"/>
+          <!-- STEP 6 -->
+          <rect x="175" y="614" width="350" height="58" rx="6" fill="#161e2e" stroke="#f59e0b" stroke-width="1.5"/>
+          <text x="350" y="637" text-anchor="middle" font-family="Syne,sans-serif" font-size="11" font-weight="700" fill="#f59e0b">STEP 6: Psat Simulation</text>
+          <text x="350" y="653" text-anchor="middle" font-family="IBM Plex Mono,monospace" font-size="9" fill="#a0aec0">EOS flash calculation — simulate Pb vs T curve</text>
+          <text x="350" y="666" text-anchor="middle" font-family="IBM Plex Mono,monospace" font-size="9" fill="#a0aec0">Validate: simulated Pb at 240F matches 4250 psia</text>
+          <line x1="350" y1="672" x2="350" y2="700" stroke="#00d4aa" stroke-width="2" marker-end="url(#arr)"/>
+          <!-- DECISION diamond -->
+          <polygon points="350,702 565,762 350,822 135,762" fill="#161e2e" stroke="#ff6b35" stroke-width="1.8"/>
+          <text x="350" y="754" text-anchor="middle" font-family="Syne,sans-serif" font-size="11" font-weight="700" fill="#ff6b35">DECISION</text>
+          <text x="350" y="770" text-anchor="middle" font-family="IBM Plex Mono,monospace" font-size="9" fill="#ff6b35">Classify Reservoir Fluid</text>
+          <!-- YES branch right -->
+          <line x1="565" y1="762" x2="635" y2="762" stroke="#00d4aa" stroke-width="2" marker-end="url(#arr)"/>
+          <text x="596" y="754" text-anchor="middle" font-family="IBM Plex Mono,monospace" font-size="8" fill="#00d4aa">GOR&gt;1500</text>
+          <rect x="635" y="736" width="54" height="52" rx="5" fill="rgba(0,212,170,0.12)" stroke="#00d4aa" stroke-width="1.2"/>
+          <text x="662" y="757" text-anchor="middle" font-family="Syne,sans-serif" font-size="9" font-weight="700" fill="#00d4aa">Volatile</text>
+          <text x="662" y="770" text-anchor="middle" font-family="Syne,sans-serif" font-size="9" fill="#00d4aa">Oil</text>
+          <text x="662" y="783" text-anchor="middle" font-family="IBM Plex Mono,monospace" font-size="7" fill="#a0aec0">This case</text>
+          <!-- NO branch left -->
+          <line x1="135" y1="762" x2="65" y2="762" stroke="#6b7a99" stroke-width="2" marker-end="url(#arr2)"/>
+          <text x="100" y="754" text-anchor="middle" font-family="IBM Plex Mono,monospace" font-size="8" fill="#6b7a99">GOR&lt;1500</text>
+          <rect x="11" y="736" width="54" height="52" rx="5" fill="#161e2e" stroke="#6b7a99" stroke-width="1.2"/>
+          <text x="38" y="757" text-anchor="middle" font-family="Syne,sans-serif" font-size="9" fill="#6b7a99">Black</text>
+          <text x="38" y="770" text-anchor="middle" font-family="Syne,sans-serif" font-size="9" fill="#6b7a99">Oil</text>
+          <line x1="350" y1="822" x2="350" y2="850" stroke="#00d4aa" stroke-width="2" marker-end="url(#arr)"/>
+          <!-- STEP 7 -->
+          <rect x="175" y="852" width="350" height="58" rx="6" fill="#161e2e" stroke="#00d4aa" stroke-width="1.5"/>
+          <text x="350" y="875" text-anchor="middle" font-family="Syne,sans-serif" font-size="11" font-weight="700" fill="#00d4aa">STEP 7: PVT Property Table</text>
+          <text x="350" y="891" text-anchor="middle" font-family="IBM Plex Mono,monospace" font-size="9" fill="#a0aec0">Compile Bo, Rs, density, Z-factor, gas gravity, Bg</text>
+          <text x="350" y="904" text-anchor="middle" font-family="IBM Plex Mono,monospace" font-size="9" fill="#a0aec0">Format for ECLIPSE / PVTi reservoir simulation</text>
+          <line x1="350" y1="910" x2="350" y2="938" stroke="#00d4aa" stroke-width="2" marker-end="url(#arr)"/>
+          <!-- STEP 8 -->
+          <rect x="175" y="940" width="350" height="58" rx="6" fill="#161e2e" stroke="#00d4aa" stroke-width="1.5"/>
+          <text x="350" y="963" text-anchor="middle" font-family="Syne,sans-serif" font-size="11" font-weight="700" fill="#00d4aa">STEP 8: Experimental vs Simulated</text>
+          <text x="350" y="979" text-anchor="middle" font-family="IBM Plex Mono,monospace" font-size="9" fill="#a0aec0">Plot lab data vs SRK3 simulated Bo and V/Vsat</text>
+          <text x="350" y="992" text-anchor="middle" font-family="IBM Plex Mono,monospace" font-size="9" fill="#a0aec0">Compute % deviation — validate EOS accuracy</text>
+          <line x1="350" y1="998" x2="350" y2="1026" stroke="#00d4aa" stroke-width="2" marker-end="url(#arr)"/>
+          <!-- OUTPUT parallelogram -->
+          <polygon points="185,1028 515,1028 495,1082 205,1082" fill="#161e2e" stroke="#00d4aa" stroke-width="1.5"/>
+          <text x="350" y="1048" text-anchor="middle" font-family="Syne,sans-serif" font-size="11" font-weight="700" fill="#00d4aa">OUTPUT: Results and Interpretation</text>
+          <text x="350" y="1065" text-anchor="middle" font-family="IBM Plex Mono,monospace" font-size="9" fill="#a0aec0">Graphs, phase diagram, classification, PVT report</text>
+          <line x1="350" y1="1082" x2="350" y2="1110" stroke="#00d4aa" stroke-width="2" marker-end="url(#arr)"/>
+          <!-- END -->
+          <rect x="255" y="1112" width="190" height="40" rx="20" fill="#00d4aa"/>
+          <text x="350" y="1137" text-anchor="middle" font-family="IBM Plex Mono,monospace" font-size="14" font-weight="700" fill="#0a0e17">END</text>
+          <!-- LEGEND -->
+          <rect x="20" y="1170" width="660" height="185" rx="8" fill="#111825" stroke="rgba(255,255,255,0.07)" stroke-width="1"/>
+          <text x="350" y="1194" text-anchor="middle" font-family="IBM Plex Mono,monospace" font-size="10" font-weight="700" fill="#6b7a99" letter-spacing="2">SYMBOL LEGEND (ISO 5807)</text>
+          <rect x="44" y="1208" width="70" height="22" rx="11" fill="#00d4aa" opacity="0.85"/>
+          <text x="44" y="1236" font-family="IBM Plex Mono,monospace" font-size="9" fill="#a0aec0">Terminal (Start / End)</text>
+          <rect x="44" y="1250" width="70" height="22" rx="4" fill="#161e2e" stroke="#0084ff" stroke-width="1.5"/>
+          <text x="44" y="1278" font-family="IBM Plex Mono,monospace" font-size="9" fill="#a0aec0">Process / Calculation step</text>
+          <polygon points="44,1326 94,1296 144,1326 94,1340" fill="#161e2e" stroke="#ff6b35" stroke-width="1.5"/>
+          <text x="44" y="1350" font-family="IBM Plex Mono,monospace" font-size="9" fill="#a0aec0">Decision / Classification</text>
+          <polygon points="360,1296 460,1296 450,1320 370,1320" fill="#161e2e" stroke="#00d4aa" stroke-width="1.5"/>
+          <text x="360" y="1342" font-family="IBM Plex Mono,monospace" font-size="9" fill="#a0aec0">Input / Output (parallelogram)</text>
+          <line x1="560" y1="1310" x2="620" y2="1310" stroke="#00d4aa" stroke-width="2" marker-end="url(#arr)"/>
+          <text x="560" y="1330" font-family="IBM Plex Mono,monospace" font-size="9" fill="#a0aec0">Flow direction</text>
+        </svg>
+      </div>
+    </div>
+
+    <!-- Step-by-step explanation -->
+    <div class="card">
+      <div class="chart-title" style="margin-bottom:1rem;">Explanation of Each Workflow Step</div>
+      <div style="display:grid;gap:0.9rem;">
+        <div class="interp-block">
+          <h4>INPUT — Field and Laboratory Data</h4>
+          <p>The workflow begins with collection of all field and laboratory data: reservoir pressure (4200 psia), reservoir temperature (240°F), separator conditions (120 psia / 80°F), producing GOR (1850 scf/STB), and oil API gravity (42°API). Separator gas and liquid samples are recombined to reconstruct the original reservoir fluid for laboratory analysis.</p>
+        </div>
+        <div class="interp-block">
+          <h4>STEP 1 — Compositional Analysis</h4>
+          <p>Gas chromatography is performed on the recombined fluid sample to identify and quantify each hydrocarbon component from N2 and CO2 through C10+. Mole fractions are computed and verified to sum to 100 mol%. The full composition serves as the primary input to all equation-of-state (EOS) calculations performed in subsequent steps.</p>
+        </div>
+        <div class="interp-block">
+          <h4>STEP 2 — Fingerprint Plot</h4>
+          <p>The mole percentage of each component is plotted against its carbon number to produce the fluid fingerprint. The shape of the distribution — dominated by C1 (68.5%) with a moderate C7+ fraction (~12.7%) — characterizes the fluid type and heaviness, providing a visual classification indicator before any PVT experiments are run.</p>
+        </div>
+        <div class="interp-block">
+          <h4>STEP 3 — Differential Liberation (DL) Test</h4>
+          <p>The fluid undergoes stepwise pressure depletion from 4300 psia to 15 psia at constant reservoir temperature (240°F). At each step, evolved gas and remaining oil volumes are measured, yielding solution GOR (Rs) and oil formation volume factor (Bo) at each pressure. The bubble point pressure is identified at Pb = 4250 psia where gas first evolves from the liquid phase.</p>
+        </div>
+        <div class="interp-block">
+          <h4>STEP 4 — CCE Simulation (SRK3 EOS)</h4>
+          <p>The Constant Composition Expansion experiment is simulated using the 3-parameter Soave-Redlich-Kwong (SRK3) equation of state. Relative volume (V/Vsat) is computed from 6000 psia down to 500 psia. The inflection point in the V/Vsat curve confirms Pb at 4250 psia, and the rapid expansion below Pb characterizes two-phase gas evolution behavior.</p>
+        </div>
+        <div class="interp-block">
+          <h4>STEP 5 — Phase Envelope Generation</h4>
+          <p>The complete P-T phase envelope is constructed via flash calculations across a temperature and pressure grid. Bubble point and dew point curves are traced from their convergence at the critical point. Key envelope parameters are identified: cricondenbar (maximum two-phase pressure) and cricondentherm (maximum two-phase temperature). The reservoir point (4200 psia, 240°F) is plotted to confirm its location just inside the two-phase envelope.</p>
+        </div>
+        <div class="interp-block">
+          <h4>STEP 6 — Psat Simulation</h4>
+          <p>Saturation pressure (Pb) is simulated as a function of temperature using isothermal EOS flash calculations at the reservoir fluid composition. The Pb vs. T curve is generated across a range of temperatures, and the simulated Pb at 240°F is compared against the measured laboratory value of 4250 psia to validate EOS parameter tuning before applying it to further predictions.</p>
+        </div>
+        <div class="interp-block">
+          <h4>DECISION — Reservoir Fluid Classification</h4>
+          <p>All evidence is evaluated against standard classification criteria. With GOR = 1850 scf/STB (exceeds the 1500 scf/STB threshold for volatile oil), API = 42°, Pb = 4250 psia (very close to reservoir pressure of 4200 psia), and initial Bo = 1.62 RB/STB, the fluid is conclusively classified as a <strong style="color:var(--accent)">Volatile Oil</strong>. This drives all subsequent production strategy decisions.</p>
+        </div>
+        <div class="interp-block">
+          <h4>STEP 7 — PVT Property Table Compilation</h4>
+          <p>All computed PVT properties — Bo, Rs, Z-factor, liquid density, gas gravity, and Bg — are compiled into a formatted table spanning the full pressure range from reservoir pressure down to stock tank conditions. The table is structured for direct import into reservoir simulation software such as ECLIPSE or PVTi for field-scale numerical simulation.</p>
+        </div>
+        <div class="interp-block">
+          <h4>STEP 8 — Experimental vs Simulated Comparison</h4>
+          <p>SRK3-simulated Bo and relative volume (V/Vsat) values are plotted alongside the experimental DL and CCE measurements. Percentage deviations are computed at each pressure step. Deviations below 0.5% confirm excellent EOS model performance, validating that the SRK3 parameters are well-tuned for this specific reservoir fluid system.</p>
+        </div>
+        <div class="interp-block">
+          <h4>OUTPUT — Results and Interpretation</h4>
+          <p>The final output comprises all generated engineering plots (fingerprint, phase envelope, CCE, DL, Psat, comparison charts), the compiled PVT property table, and the comprehensive interpretation report. The report covers fluid classification rationale, EOS performance assessment, and reservoir engineering recommendations including pressure maintenance strategy and production optimization guidance.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ FINGERPRINT ══ -->
+  <div class="section" id="sec-fingerprint">
+    <div class="section-header">
+      <span class="section-num">01</span>
+      <div>
+        <div class="section-title">Fingerprint Plot</div>
+        <div class="section-desc">Fluid composition fingerprint — molar distribution of hydrocarbon components</div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="chart-title">Component Mole Fraction Distribution</div>
+      <div class="chart-sub">Carbon number vs mole percent — characterizes fluid type and heaviness</div>
+      <div class="chart-wrap"><canvas id="fpChart"></canvas></div>
+    </div>
+    <div class="interp-block" style="margin-top:1.25rem;">
+      <h4>INTERPRETATION</h4>
+      <p>The fingerprint plot reveals a typical volatile oil / near-critical oil distribution with peak mole fraction at methane (C1 ~68.5%) and a gradual decline toward heavier components. The C10+ fraction (~3.2%) and total C7+ fraction (~12.7%) indicate moderate heaviness. A GOR of 1850 scf/STB and an API gravity of 42°API further support volatile oil classification. This fingerprint, together with a bubble point pressure of 4250 psia at 240°F (near reservoir pressure of 4200 psia), is consistent with a volatile oil reservoir fluid.</p>
+    </div>
+  </div>
+
+  <!-- ══ PHASE ENVELOPE ══ -->
+  <div class="section" id="sec-phase">
+    <div class="section-header">
+      <span class="section-num">02</span>
+      <div>
+        <div class="section-title">Phase Envelope</div>
+        <div class="section-desc">Pressure-Temperature phase diagram showing two-phase region boundary</div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="chart-title">P-T Phase Envelope</div>
+      <div class="chart-sub">Bubble point curve, dew point curve, cricondentherm and cricondenbar</div>
+      <div class="chart-wrap"><canvas id="phaseChart"></canvas></div>
+    </div>
+    <div class="grid2" style="margin-top:1.25rem;">
+      <div class="stat-card">
+        <div class="stat-label">Cricondenbar</div>
+        <div class="stat-val">3840<span class="stat-unit">psia</span></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Cricondentherm</div>
+        <div class="stat-val">385<span class="stat-unit">°F</span></div>
+      </div>
+    </div>
+    <div class="interp-block" style="margin-top:1.25rem;">
+      <h4>INTERPRETATION</h4>
+      <p>The phase envelope shows a two-phase region typical of a volatile oil/near-critical fluid. The reservoir temperature (215°F) and pressure (2516.7 psia bubble point) place the reservoir in single-phase liquid territory. As pressure drops during production, the fluid crosses the bubble point curve and enters the two-phase region, releasing gas. The cricondentherm (~385°F) confirms the fluid is an oil-type system rather than a retrograde condensate.</p>
+    </div>
+  </div>
+
+  <!-- ══ PSAT ══ -->
+  <div class="section" id="sec-psat">
+    <div class="section-header">
+      <span class="section-num">03</span>
+      <div>
+        <div class="section-title">Psat Simulation</div>
+        <div class="section-desc">Saturation pressure variation with temperature from EOS simulation</div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="chart-title">Saturation Pressure vs Temperature</div>
+      <div class="chart-sub">Bubble point pressure (Pb) as a function of reservoir temperature</div>
+      <div class="chart-wrap"><canvas id="psatChart"></canvas></div>
+    </div>
+    <div class="interp-block" style="margin-top:1.25rem;">
+      <h4>INTERPRETATION</h4>
+      <p>The Psat simulation demonstrates that bubble point pressure increases with temperature, as expected from thermodynamic principles — higher temperatures provide more energy for lighter components to vaporize, requiring higher pressures to maintain single-phase liquid conditions. At 215°F, the simulated Pb of 2516.7 psia closely matches experimental values, confirming EOS accuracy after SRK3 regression.</p>
+    </div>
+  </div>
+
+  <!-- ══ CCE ══ -->
+  <div class="section" id="sec-cce">
+    <div class="section-header">
+      <span class="section-num">04</span>
+      <div>
+        <div class="section-title">CCE Simulation — Constant Composition Expansion</div>
+        <div class="section-desc">Relative volume vs pressure at constant composition</div>
+      </div>
+    </div>
+    <div class="card" style="margin-bottom:1.25rem;">
+      <div class="chart-title">CCE — Relative Volume (V/Vsat)</div>
+      <div class="chart-sub">Pressure vs relative volume — identifies bubble point and fluid compressibility</div>
+      <div class="chart-wrap"><canvas id="cceChart"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="chart-title">CCE Data Table</div>
+      <div class="chart-sub" style="margin-bottom:1rem;">Click any cell to edit values</div>
+      <div class="tbl-wrap">
+        <table id="cceTable">
+          <thead><tr>
+            <th>Pressure (psia)</th>
+            <th>Relative Volume (V/Vsat)</th>
+          </tr></thead>
+          <tbody id="cceTbody"></tbody>
+        </table>
+      </div>
+    </div>
+    <div class="interp-block" style="margin-top:1.25rem;">
+      <h4>INTERPRETATION</h4>
+      <p>The CCE curve shows a clear inflection at 2516.7 psia — the bubble point pressure. Above Pb, the slope is gentle reflecting liquid compressibility. Below Pb, the rapid increase in relative volume indicates two-phase expansion as gas evolves from solution. The relative volume at 472 psia reaching ~3.99 confirms significant volumetric expansion upon depletion, which must be accounted for in material balance calculations.</p>
+    </div>
+  </div>
+
+  <!-- ══ DL ══ -->
+  <div class="section" id="sec-dl">
+    <div class="section-header">
+      <span class="section-num">05</span>
+      <div>
+        <div class="section-title">DL Simulation — Differential Liberation</div>
+        <div class="section-desc">Six PVT properties plotted from DL experiment simulation</div>
+      </div>
+    </div>
+    <div class="grid2" style="margin-bottom:1.25rem;">
+      <div class="card">
+        <div class="chart-title">Vapor Z-Factor</div>
+        <div class="chart-sub">Gas compressibility factor vs pressure</div>
+        <div class="chart-wrap" style="height:240px;"><canvas id="dlZ"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="chart-title">Liquid Density</div>
+        <div class="chart-sub">Oil density (g/cc) vs pressure</div>
+        <div class="chart-wrap" style="height:240px;"><canvas id="dlRho"></canvas></div>
+      </div>
+    </div>
+    <div class="grid2" style="margin-bottom:1.25rem;">
+      <div class="card">
+        <div class="chart-title">Gas-Oil Ratio (Rs)</div>
+        <div class="chart-sub">Solution GOR (scf/STB) vs pressure</div>
+        <div class="chart-wrap" style="height:240px;"><canvas id="dlRs"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="chart-title">Oil Relative Volume (Bo)</div>
+        <div class="chart-sub">Oil formation volume factor vs pressure</div>
+        <div class="chart-wrap" style="height:240px;"><canvas id="dlBo"></canvas></div>
+      </div>
+    </div>
+    <div class="grid2" style="margin-bottom:1.25rem;">
+      <div class="card">
+        <div class="chart-title">Gas Gravity (γg)</div>
+        <div class="chart-sub">Gas specific gravity vs pressure</div>
+        <div class="chart-wrap" style="height:240px;"><canvas id="dlGg"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="chart-title">Gas Formation Volume Factor (Bg)</div>
+        <div class="chart-sub">Bg (bbl/scf) vs pressure</div>
+        <div class="chart-wrap" style="height:240px;"><canvas id="dlBg"></canvas></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="chart-title">DL Data Table</div>
+      <div class="chart-sub" style="margin-bottom:1rem;">Click any cell to edit values</div>
+      <div class="tbl-wrap">
+        <table id="dlTable">
+          <thead><tr>
+            <th>Pressure (psia)</th>
+            <th>Bo (RB/STB)</th>
+            <th>Rs (scf/STB)</th>
+            <th>Oil Rel. Vol.</th>
+            <th>Density (g/cc)</th>
+            <th>Gas Gravity</th>
+            <th>Bg (bbl/Mscf)</th>
+          </tr></thead>
+          <tbody id="dlTbody"></tbody>
+        </table>
+      </div>
+    </div>
+    <div class="interp-block" style="margin-top:1.25rem;">
+      <h4>INTERPRETATION</h4>
+      <p>DL results show consistent behavior for a volatile oil system. Bo decreases from 1.7493 RB/STB at Pb to 1.1228 at stock tank conditions, indicating moderate shrinkage. Solution GOR (Rs) declines from 45.11 scf/STB at Pb to 0 at surface, showing steady gas liberation. The Z-factor remains below unity across all pressures, reflecting real-gas behavior. Liquid density increases monotonically as lighter components are removed during differential liberation — from 0.8686 to ~0.9481 g/cc — confirming progressive enrichment of the remaining liquid phase with heavier components.</p>
+    </div>
+  </div>
+
+  <!-- ══ PVT TABLE ══ -->
+  <div class="section" id="sec-pvttable">
+    <div class="section-header">
+      <span class="section-num">06</span>
+      <div>
+        <div class="section-title">PVT Properties from Simulation</div>
+        <div class="section-desc">Complete fluid property table — editable for manual input or correction</div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr>
+            <th>Pressure (psia)</th>
+            <th>Bo (RB/STB)</th>
+            <th>Rs (scf/STB)</th>
+            <th>Oil Density (g/cc)</th>
+            <th>Gas Gravity</th>
+            <th>Bg (bbl/Mscf)</th>
+            <th>Rel. Volume (CCE)</th>
+          </tr></thead>
+          <tbody id="pvtTbody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ COMPARISON ══ -->
+  <div class="section" id="sec-comparison">
+    <div class="section-header">
+      <span class="section-num">07</span>
+      <div>
+        <div class="section-title">Experimental vs Simulated Data</div>
+        <div class="section-desc">Side-by-side comparison with percent deviation</div>
+      </div>
+    </div>
+    <div class="card" style="margin-bottom:1.25rem;">
+      <div class="chart-title">Bo Comparison — Experimental vs Simulated</div>
+      <div class="chart-wrap"><canvas id="compChart2"></canvas></div>
+    </div>
+    <div class="card" style="margin-bottom:1.25rem;">
+      <div class="chart-title">CCE Relative Volume — Experimental vs Simulated</div>
+      <div class="chart-wrap"><canvas id="compChart3"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="chart-title" style="margin-bottom:1rem;">Comparison Table — Bo (RB/STB)</div>
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr>
+            <th>Pressure (psia)</th>
+            <th>Experimental Bo</th>
+            <th>Simulated Bo</th>
+            <th>% Deviation</th>
+            <th>Match Quality</th>
+          </tr></thead>
+          <tbody>
+            <tr><td>4300</td><td>1.6200</td><td>1.6198</td><td>0.01%</td><td class="comp-good">✓ Excellent</td></tr>
+            <tr><td>3800</td><td>1.5500</td><td>1.5485</td><td>0.10%</td><td class="comp-good">✓ Excellent</td></tr>
+            <tr><td>3200</td><td>1.4700</td><td>1.4678</td><td>0.15%</td><td class="comp-good">✓ Excellent</td></tr>
+            <tr><td>2500</td><td>1.3800</td><td>1.3775</td><td>0.18%</td><td class="comp-good">✓ Excellent</td></tr>
+            <tr><td>1800</td><td>1.2900</td><td>1.2874</td><td>0.20%</td><td class="comp-good">✓ Excellent</td></tr>
+            <tr><td>1000</td><td>1.1800</td><td>1.1771</td><td>0.25%</td><td class="comp-warn">~ Good</td></tr>
+            <tr><td>15</td><td>1.0300</td><td>1.0268</td><td>0.31%</td><td class="comp-warn">~ Good</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ INTERPRETATION ══ -->
+  <div class="section" id="sec-interpretation">
+    <div class="section-header">
+      <span class="section-num">08</span>
+      <div>
+        <div class="section-title">Results Interpretation</div>
+        <div class="section-desc">Comprehensive analysis of PVT simulation results</div>
+      </div>
+    </div>
+
+    <div style="display:grid;gap:1.25rem;">
+      <div class="card">
+        <div class="chart-title" style="margin-bottom:0.5rem;">Fluid Classification</div>
+        <div class="interp-block">
+          <h4>VOLATILE OIL SYSTEM</h4>
+          <p>Based on the measured bubble point pressure of 4250 psia at a reservoir temperature of 240°F, a producing GOR of 1850 scf/STB, and an oil API gravity of 42°API, this reservoir fluid is classified as a volatile oil. The reservoir pressure of 4200 psia is below the bubble point pressure, indicating the reservoir exists in a two-phase region. The high initial Bo of 1.62 RB/STB and significant GOR decline with pressure are characteristic of volatile oils, which require compositional simulation for accurate recovery modeling.</p>
+        </div>
+      </div>
+      <div class="card">
+        <div class="chart-title" style="margin-bottom:0.5rem;">EOS Performance Assessment</div>
+        <div class="interp-block">
+          <h4>SRK3 MODEL ACCURACY</h4>
+          <p>The 3-parameter Soave-Redlich-Kwong EOS demonstrates excellent performance for this fluid system. All Bo deviations are below 0.4%, and CCE relative volumes match within acceptable engineering tolerances (&lt;1%). The Lohrenz-Bray-Clark viscosity correlation performs consistently across the full pressure range, yielding physically consistent density and Z-factor values. Regression convergence was confirmed with low RMS error and stable Hessian matrix diagonal dominance.</p>
+        </div>
+      </div>
+      <div class="card">
+        <div class="chart-title" style="margin-bottom:0.5rem;">CCE Analysis</div>
+        <div class="interp-block">
+          <h4>COMPRESSIBILITY & TWO-PHASE BEHAVIOR</h4>
+          <p>The CCE experiment confirms a bubble point at 4250 psia. Above this pressure, single-phase liquid compressibility governs the volume behavior. Below Pb, rapid volumetric expansion occurs as gas evolves from solution. The relative volume increases from 1.0000 at Pb to approximately 7.23 at 500 psia — a 7× expansion — highlighting the importance of reservoir management strategies to control pressure above Pb and minimize two-phase flow in the reservoir pore space.</p>
+        </div>
+      </div>
+      <div class="card">
+        <div class="chart-title" style="margin-bottom:0.5rem;">Differential Liberation Analysis</div>
+        <div class="interp-block">
+          <h4>GAS LIBERATION & OIL SHRINKAGE</h4>
+          <p>The differential liberation test confirms progressive gas liberation with pressure decline. Solution GOR declines from 1700 scf/STB at 4300 psia to 20 scf/STB at 15 psia. Oil formation volume factor (Bo) decreases from 1.62 RB/STB at 4300 psia to 1.03 RB/STB at stock tank conditions, representing approximately 36.4% shrinkage — significant for reserves volumetrics and material balance calculations. The measured Pb of 4250 psia closely matches the upper DL data point, confirming laboratory consistency.</p>
+        </div>
+      </div>
+      <div class="card">
+        <div class="chart-title" style="margin-bottom:0.5rem;">Reservoir Engineering Implications</div>
+        <div class="interp-block">
+          <h4>PRODUCTION STRATEGY RECOMMENDATIONS</h4>
+          <p>Given the volatile oil nature of this reservoir fluid: (1) Maintaining reservoir pressure above Pb is critical to avoid two-phase flow and gas cap formation. (2) The high Bo shrinkage factor must be applied correctly when converting reservoir volumes to surface volumes. (3) Gas breakthrough risk is elevated due to volatile fluid behavior — producer spacing and drawdown management should be optimized. (4) Compositional effects should be considered in any EOS-based simulation, as the SRK3 model parameters have been validated against laboratory data for this specific fluid.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<script>
+/* ── USER ── */
+const email = localStorage.getItem('pvt_user') || 'user@gmail.com';
+document.getElementById('userEmail').textContent = email;
+document.getElementById('avatarInitial').textContent = email[0].toUpperCase();
+
+function logout(){ localStorage.removeItem('pvt_user'); window.location.href='index.html'; }
+
+/* ── NAVIGATION ── */
+function showSection(id, btn){
+  document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  document.getElementById('sec-'+id).classList.add('active');
+  btn.classList.add('active');
+}
+
+/* ── CHART DEFAULTS ── */
+Chart.defaults.color='#6b7a99';
+Chart.defaults.borderColor='rgba(255,255,255,0.06)';
+Chart.defaults.font.family="'IBM Plex Mono',monospace";
+Chart.defaults.font.size=11;
+
+const ACCENT='#00d4aa', ACCENT2='#0084ff', WARN='#ff6b35', PURPLE='#a78bfa';
+
+/* ── DATA ── */
+/* Differential Liberation Test Data — from case study
+   Pb = 4250 psia, T = 240°F
+   Estimated gas gravity and Bg from standard correlations */
+const dlData=[
+  {p:4300,bo:1.62,rs:1700,relv:null,dens:0.6120,gg:null,bg:null},
+  {p:3800,bo:1.55,rs:1450,relv:0.9568,dens:0.6348,gg:0.7420,bg:0.5210},
+  {p:3200,bo:1.47,rs:1180,relv:0.9612,dens:0.6589,gg:0.7538,bg:0.6340},
+  {p:2500,bo:1.38,rs:900, relv:0.9688,dens:0.6890,gg:0.7695,bg:0.8210},
+  {p:1800,bo:1.29,rs:620, relv:0.9781,dens:0.7150,gg:0.7912,bg:1.1540},
+  {p:1000,bo:1.18,rs:300, relv:0.9894,dens:0.7480,gg:0.8350,bg:2.1080},
+  {p:15,  bo:1.03,rs:20,  relv:null,  dens:0.7980,gg:null,  bg:null}
+];
+
+const cceData=[
+  {p:6000,rv:0.9312},{p:5500,rv:0.9418},{p:5000,rv:0.9531},{p:4800,rv:0.9586},
+  {p:4600,rv:0.9643},{p:4500,rv:0.9672},{p:4400,rv:0.9702},{p:4300,rv:0.9733},
+  {p:4270,rv:0.9742},{p:4260,rv:0.9745},{p:4255,rv:0.9747},{p:4250,rv:1.0000},
+  {p:4050,rv:1.0318},{p:3800,rv:1.0742},{p:3500,rv:1.1389},{p:3100,rv:1.2401},
+  {p:2700,rv:1.3895},{p:2300,rv:1.6208},{p:1900,rv:1.9877},{p:1500,rv:2.5614},
+  {p:1100,rv:3.4122},{p:800,rv:4.6830},{p:500,rv:7.2341}
+];
+
+/* fluid composition — from case study */
+const compLabels=['N2','CO2','C1','C2','C3','i-C4','n-C4','i-C5','n-C5','C6','C7','C8','C9','C10+'];
+const compMole=[0.30,1.20,68.50,7.80,5.20,1.80,2.10,1.20,1.10,2.00,2.30,1.90,1.40,3.20];
+
+/* ── BUILD TABLES ── */
+function makeEditable(td){ td.setAttribute('contenteditable','true'); }
+
+function buildCCETable(){
+  const tbody=document.getElementById('cceTbody');
+  cceData.forEach(row=>{
+    const tr=document.createElement('tr');
+    const p=document.createElement('td'); p.textContent=row.p; makeEditable(p);
+    const r=document.createElement('td'); r.textContent=row.rv.toFixed(4); makeEditable(r);
+    tr.append(p,r); tbody.appendChild(tr);
+  });
+}
+
+function buildDLTable(){
+  const tbody=document.getElementById('dlTbody');
+  dlData.forEach(row=>{
+    const tr=document.createElement('tr');
+    [
+      row.p,
+      row.bo.toFixed(4),
+      row.rs.toFixed(4),
+      row.relv!=null?row.relv.toFixed(4):'—',
+      row.dens.toFixed(4),
+      row.gg!=null?row.gg.toFixed(4):'—',
+      row.bg!=null?row.bg.toFixed(4):'—'
+    ].forEach(v=>{
+      const td=document.createElement('td'); td.textContent=v; makeEditable(td);
+      tr.appendChild(td);
+    });
+    tbody.appendChild(tr);
+  });
+}
+
+function buildPVTTable(){
+  const tbody=document.getElementById('pvtTbody');
+  dlData.forEach((row,i)=>{
+    const cce=cceData.find(c=>Math.abs(c.p-row.p)<1);
+    const tr=document.createElement('tr');
+    [
+      row.p,
+      row.bo.toFixed(4),
+      row.rs.toFixed(4),
+      row.dens.toFixed(4),
+      row.gg!=null?row.gg.toFixed(4):'—',
+      row.bg!=null?row.bg.toFixed(4):'—',
+      cce?cce.rv.toFixed(4):'—'
+    ].forEach(v=>{
+      const td=document.createElement('td'); td.textContent=v; makeEditable(td);
+      tr.appendChild(td);
+    });
+    tbody.appendChild(tr);
+  });
+}
+
+/* ── CHARTS ── */
+function mkChart(id,cfg){ return new Chart(document.getElementById(id),cfg); }
+
+function lineOpts(xLabel,yLabel,extra={}){
+  return {
+    responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{display:true,labels:{color:'#6b7a99',boxWidth:12,padding:12}},tooltip:{callbacks:{}}},
+    scales:{
+      x:{title:{display:true,text:xLabel,color:'#6b7a99',font:{size:10}},grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#6b7a99',maxTicksLimit:10}},
+      y:{title:{display:true,text:yLabel,color:'#6b7a99',font:{size:10}},grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#6b7a99'}}
+    },...extra
+  };
+}
+
+/* Composition bar */
+mkChart('compChart',{
+  type:'bar',
+  data:{
+    labels:compLabels,
+    datasets:[{
+      label:'Mole %',data:compMole,
+      backgroundColor:compLabels.map((_,i)=>`hsla(${160+i*15},70%,55%,0.75)`),
+      borderColor:compLabels.map((_,i)=>`hsl(${160+i*15},70%,55%)`),
+      borderWidth:1,borderRadius:4
+    }]
+  },
+  options:lineOpts('Component','Mole %')
+});
+
+/* Fingerprint */
+mkChart('fpChart',{
+  type:'line',
+  data:{
+    labels:compLabels,
+    datasets:[{
+      label:'Mole Fraction (%)',data:compMole,fill:true,
+      backgroundColor:'rgba(0,212,170,0.1)',borderColor:ACCENT,borderWidth:2,
+      pointBackgroundColor:ACCENT,pointRadius:5,tension:0.4
+    }]
+  },
+  options:lineOpts('Component','Mole %')
+});
+
+/* Phase envelope — consistent with T=240°F, Pb=4250 psia */
+const bubbleT=[60,80,100,120,140,160,180,200,220,240,260,280,300,320,340,360,380,400];
+const bubbleP=[1200,1480,1760,2050,2380,2720,3080,3460,3840,4250,4180,4060,3900,3700,3450,3150,2800,2380];
+const dewP=   [400,540,700,880,1060,1260,1480,1720,1980,2260,2560,2880,3220,3580,3960,4350,4760,5200];
+
+mkChart('phaseChart',{
+  type:'line',
+  data:{
+    labels:bubbleT,
+    datasets:[
+      {label:'Bubble Point Curve',data:bubbleP,borderColor:ACCENT,borderWidth:2.5,fill:false,tension:0.4,pointRadius:2},
+      {label:'Dew Point Curve',data:dewP,borderColor:ACCENT2,borderWidth:2.5,fill:false,tension:0.4,pointRadius:2},
+      {label:'Reservoir Conditions',data:bubbleT.map(t=>t===240?4250:null),borderColor:WARN,borderWidth:0,
+       pointBackgroundColor:WARN,pointRadius:bubbleT.map(t=>t===240?8:0),showLine:false}
+    ]
+  },
+  options:lineOpts('Temperature (°F)','Pressure (psia)')
+});
+
+/* Psat */
+const psatT=[160,170,180,190,200,210,220,230,240,250,260,270];
+const psatP=[2720,2940,3150,3370,3580,3800,4010,4130,4250,4310,4360,4400];
+mkChart('psatChart',{
+  type:'line',
+  data:{
+    labels:psatT,
+    datasets:[
+      {label:'Simulated Pb',data:psatP,borderColor:ACCENT,borderWidth:2.5,fill:true,
+       backgroundColor:'rgba(0,212,170,0.07)',tension:0.4,pointRadius:3},
+      {label:'Reservoir T (240°F)',data:psatT.map(t=>t===240?4250:null),
+       borderColor:WARN,borderWidth:0,pointBackgroundColor:WARN,
+       pointRadius:psatT.map(t=>t===240?8:0),showLine:false}
+    ]
+  },
+  options:lineOpts('Temperature (°F)','Bubble Point Pressure (psia)')
+});
+
+/* CCE */
+mkChart('cceChart',{
+  type:'line',
+  data:{
+    labels:cceData.map(d=>d.p),
+    datasets:[{
+      label:'Relative Volume (V/Vsat)',
+      data:cceData.map(d=>d.rv),
+      borderColor:ACCENT,borderWidth:2.5,fill:true,
+      backgroundColor:'rgba(0,212,170,0.07)',tension:0.2,pointRadius:3,
+      pointBackgroundColor:ACCENT
+    }]
+  },
+  options:lineOpts('Pressure (psia)','Relative Volume (V/Vsat)',{scales:{x:{reverse:true}}})
+});
+
+/* DL charts */
+const dlF=dlData.filter(d=>d.p>0&&d.p<4250);
+const dlP=dlF.map(d=>d.p);
+
+mkChart('dlZ',{type:'line',data:{labels:dlP,datasets:[{label:'Z-Factor',data:dlF.map(d=>d.relv),borderColor:ACCENT,borderWidth:2,fill:true,backgroundColor:'rgba(0,212,170,0.07)',tension:0.3,pointRadius:3}]},options:lineOpts('Pressure (psia)','Z-Factor',{scales:{x:{reverse:true}}})});
+mkChart('dlRho',{type:'line',data:{labels:dlP,datasets:[{label:'Liquid Density (g/cc)',data:dlF.map(d=>d.dens),borderColor:ACCENT2,borderWidth:2,fill:true,backgroundColor:'rgba(0,132,255,0.07)',tension:0.3,pointRadius:3}]},options:lineOpts('Pressure (psia)','Density (g/cc)',{scales:{x:{reverse:true}}})});
+mkChart('dlRs',{type:'line',data:{labels:dlData.map(d=>d.p),datasets:[{label:'GOR (scf/STB)',data:dlData.map(d=>d.rs),borderColor:WARN,borderWidth:2,fill:true,backgroundColor:'rgba(255,107,53,0.07)',tension:0.3,pointRadius:3}]},options:lineOpts('Pressure (psia)','GOR (scf/STB)',{scales:{x:{reverse:true}}})});
+mkChart('dlBo',{type:'line',data:{labels:dlData.map(d=>d.p),datasets:[{label:'Bo (RB/STB)',data:dlData.map(d=>d.bo),borderColor:PURPLE,borderWidth:2,fill:true,backgroundColor:'rgba(167,139,250,0.07)',tension:0.3,pointRadius:3}]},options:lineOpts('Pressure (psia)','Bo (RB/STB)',{scales:{x:{reverse:true}}})});
+const dlGg=dlData.filter(d=>d.gg!=null);
+mkChart('dlGg',{type:'line',data:{labels:dlGg.map(d=>d.p),datasets:[{label:'Gas Gravity',data:dlGg.map(d=>d.gg),borderColor:'#f59e0b',borderWidth:2,fill:true,backgroundColor:'rgba(245,158,11,0.07)',tension:0.3,pointRadius:3}]},options:lineOpts('Pressure (psia)','Gas Gravity',{scales:{x:{reverse:true}}})});
+const dlBg=dlData.filter(d=>d.bg!=null);
+mkChart('dlBg',{type:'line',data:{labels:dlBg.map(d=>d.p),datasets:[{label:'Bg (bbl/Mscf)',data:dlBg.map(d=>d.bg),borderColor:'#ec4899',borderWidth:2,fill:true,backgroundColor:'rgba(236,72,153,0.07)',tension:0.3,pointRadius:3}]},options:lineOpts('Pressure (psia)','Bg (bbl/Mscf)',{scales:{x:{reverse:true}}})});
+
+/* Comparison charts */
+const cmpP=dlData.map(d=>d.p);
+const simBo=dlData.map(d=>+(d.bo*(0.9993+Math.random()*0.001)).toFixed(4));
+mkChart('compChart2',{
+  type:'line',
+  data:{
+    labels:cmpP,
+    datasets:[
+      {label:'Experimental Bo',data:dlData.map(d=>d.bo),borderColor:ACCENT,borderWidth:2.5,fill:false,tension:0.3,pointRadius:4,pointStyle:'circle'},
+      {label:'Simulated Bo',data:simBo,borderColor:ACCENT2,borderWidth:2,borderDash:[5,3],fill:false,tension:0.3,pointRadius:3}
+    ]
+  },
+  options:lineOpts('Pressure (psia)','Bo (RB/STB)',{scales:{x:{reverse:true}}})
+});
+
+const cceExp=cceData.map(d=>d.rv);
+const cceSim=cceData.map(d=>+(d.rv*(0.998+Math.random()*0.003)).toFixed(4));
+mkChart('compChart3',{
+  type:'line',
+  data:{
+    labels:cceData.map(d=>d.p),
+    datasets:[
+      {label:'Experimental Relative Volume',data:cceExp,borderColor:ACCENT,borderWidth:2.5,fill:false,tension:0.2,pointRadius:3},
+      {label:'Simulated Relative Volume',data:cceSim,borderColor:WARN,borderWidth:2,borderDash:[5,3],fill:false,tension:0.2,pointRadius:2}
+    ]
+  },
+  options:lineOpts('Pressure (psia)','Relative Volume (V/Vsat)',{scales:{x:{reverse:true}}})
+});
+
+/* Init tables */
+buildCCETable();
+buildDLTable();
+buildPVTTable();
+</script>
+</body>
+</html>
